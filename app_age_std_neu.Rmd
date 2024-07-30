@@ -1,0 +1,289 @@
+---
+title: "Age Standardization"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+     version: 4
+     bootswatch: minty
+runtime: shiny
+---
+```{r global, include = FALSE}
+
+# necessary packages
+library("shiny")
+library("tidyverse")
+library("gridExtra")
+library("DT")
+library("reshape2")
+library("plotly")
+
+# Load data
+allCountries <- read.csv("IT_HU_ES_LI_TW_BY.csv") # Countries
+
+# damit die Tick-Label in den Plots schöner sind:
+allCountries$Country <- factor(allCountries$Country, levels = c("IT", "HU", "ES", "LT", "BY", "TW"), 
+         labels = c("Italien", "Ungarn", "Spanien", "Litauen", "Belarus", "Taiwan"))
+
+RateStandards <- read.csv("RateStandards.csv") # Standards for ASCDR 
+
+```
+
+# Informationen
+
+## Column
+<h4> Crude Death Rate (CDR) </h4>
+
+Die Crude Death Rate wird wie folgt berechnet:
+$$CDR = \sum_{i=0}^{\infty}M_i \cdot C_i (\cdot 1000)$$
+wobei $C_x = {N_i}/{N}$ die Proportion der gesamten Population ist, die zu der Alters-Spanne $i$ bis $i+n$ gehört. $M_i = \frac{D_i}{N_i}$ ist die altersspezifische Sterberate für die Alters-Spanne $i$ bis $i+n$ (in den folgenden Beispielen ist n = 4). Die CDR ist Altersverzerrt, d.h. bei einem Land mit "alter" bevölkerungsstruktur kommt es zu einer höheren CDR, als in einem Land mit einer "jungen" Bevölkerungsstruktur, denn in ersterem sterben natürlich mehr Menschen. Um dieser Verzerrung entgegenzuwirken, berechnet man die ASCDR. Dies ist beispielsweise an dem Vergleich von CDR und ASCDR von Taiwan zu erkennen.
+
+<h6> Preston et al. 2008, S.24 
+
+## Column {data-width=50}
+
+## Column
+<h4> Age Standardized CDR (ASCDR) </h4>
+
+Die ASCDR wird für ein Land $j$ und Standard $s$ wie folgt berechnet:
+$$ASCDR^j = \sum_{i=0}^{\infty}M_i^j \cdot C_i^s (\cdot 1000)$$
+wobei $C_i^s$ die Proportion der Bevölkerung im $i$-ten Alters-Intervall in einer als "Standard" $s$ ausgewählten Bevölkerung ist. $M_i^j$ ist analog zur CDR für Land $j$: $M_i^j = \frac{D_i^j}{N_i^j}$ die alterspezifische Sterberate für Bevölkerung j. Hier wird also eine Vergeleichsbevölkerung als Standard gewählt und Verzerrungen in der Altersstruktur treten nicht mehr auf. So können Unterschiede in z.B. Sterblichkeit so betrachtet und verglichen werden, als gäbe es keine Unterschiede in der Altersstruktur. Unterschiedliche Wahlen dieses Standards können allerdings zu unterschiedlichen Ergebnissen führen.
+
+<h6> Preston et al. 2008, S.24 </h6>
+
+# Einlfuss der Altersstruktur des Standards
+
+```{r, include=FALSE}
+above60_TW <- round(sum(allCountries[allCountries$Country == "Taiwan" & allCountries$Age > 60,]$PopProp)*100, 2)
+above60_EU <- round(sum(RateStandards[RateStandards$Standard == "EU" & RateStandards$Age > 60,]$PopProp)*100, 2)
+```
+
+## Column {data-width=100}
+Diese Beispiele sollen die Unterschiede aufzeigen, die in einer Altersverteilung vorliegen können und Auswirkungen auf die ASCDR haben. <br>
+Wie hier zu erkennen ist, ist die Altersstruktur von bspw. Taiwan sehr "jung" (nur `r above60_TW`% sind älter als 60 Jahre), während die der EU im Vergleich "alt" ist (hier sind `r above60_EU`% älter als 60 Jahre).
+
+
+
+```{r}
+# plots to show different age distributions, adjust to show the ones needed
+renderPlot({
+  p_demo_TW <- RateStandards %>% filter(Standard == "TW") %>% ggplot(aes(x = Age, y = PopProp)) +
+    geom_bar(stat = "identity", fill = "skyblue") +
+    labs(x = "Altersgruppen", y = "Population (proportional)", title = "Altersverteilung in Taiwan") +
+    scale_x_continuous(breaks = RateStandards$Age, labels = paste(RateStandards$Age, "-", RateStandards$Age + 4)) +
+    scale_y_continuous(labels = scales::number_format()) +
+    theme_minimal()
+
+  p_demo_EU <- RateStandards %>% filter(Standard == "EU") %>% ggplot(aes(x = Age, y = PopProp)) +
+    geom_bar(stat = "identity", fill = "darkgreen") +
+    labs(x = "Altersgruppen", y = "Population (proportional)", title = "Altersverteilung in der EU") +
+    scale_x_continuous(breaks = RateStandards$Age, labels = paste(RateStandards$Age, "-", RateStandards$Age + 4)) +
+    scale_y_continuous(labels = scales::number_format()) +
+    theme_minimal()
+
+ grid.arrange(p_demo_TW, p_demo_EU, ncol = 2, widths = c(100,100))
+})
+```
+
+
+
+
+# Plots für CDR & ASCDR
+<!-- needs Code to Calculate the rates based on the input (Rate & Country) -->
+
+## Column {.sidebar}
+```{r}
+selectInput(
+  inputId = "Country1",
+  label = "Wähle Länder zum Vergleich:",
+  choices = c("Italien", "Litauen", "Ungarn", "Spanien", "Taiwan", "Belraus"),
+  selected = c("Taiwan", "Italien"),
+  multiple = TRUE)
+```
+
+```{r}
+radioButtons(
+  inputId = "Rate1",
+  label = "Wähle einen Standard:",
+  choices = c("WHO", "EU", "Spanien" = "ES", "Taiwan" = "TW")
+)
+```
+
+```{r}
+checkboxInput(inputId = "YN_CDR",
+                   label = "CDR?")
+```
+
+## Column {data-width=200}
+
+Hier ist die berechnete ASCDR der Länder zu sehen, die im oberen Auswahlfeld ausgewählt wurde. Mit der Backspace Taste können die Auswahlen entfernt werden. Der Standard kann unten ausgewählt werden. <br><br> 
+Wenn die CDR angezeigt werden soll, klicke dazu die Boc "CDR?". In dem einen Plot-Fenster erscheint dann ein zweiter Plot. In dem anderen werden die Plots übereinander gelegt und die siehst die CDR in schwarz. Die eine Variante dient der Übersichtlichkeit, die andere der Vergleichbarkeit. Der Inhalt ist in beiden Varianten genau der gleiche.
+
+
+## Column {data-width=50}
+
+## Column: Rates and Plots based on Input {.tabset}
+
+```{r reactive data}
+
+# Creating a reactive Data set based on Input values
+death_rates <- reactive({
+  # Filter data based on selected countries  
+  data_country1 <- allCountries %>%
+    filter(Country %in% input$Country1)
+  
+  data_rate1 <- RateStandards %>% 
+    filter(Standard %in% input$Rate1)
+ 
+   # Calculate CDR and ASCDR
+  data_country1 <- data_country1 %>%
+    group_by(Country) %>% # such that the cdr is not the sum across all countries
+    mutate(cdr = sum(DeathRate * PopProp) * 1000,
+           ascdr = sum(DeathRate * data_rate1$PopProp) * 1000) %>%
+    ungroup()
+  
+  
+  return(data_country1)
+})
+```
+
+### Plot I
+```{r, fig.height = 8}
+# Plotting the Rates
+
+renderPlot({ # use renderPlotly for interactive plots (ggplotply) instead of renderPlot
+
+  # ASCDR-Plot
+  p2 <- ggplot(death_rates(),
+               aes(x = Country, y = ascdr, fill = Country)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    coord_cartesian(ylim = c(0, 13)) +
+    labs(x = "Country", y = "ASCDR", fill = "Country", subtitle = "x1000 Personen") +
+    theme_minimal() +
+    ggtitle(paste("ASCDR mit Standard:", input$Rate1)) +
+    labs(caption = "Daten: https://www.mortality.org/Home") +
+    theme(plot.title = element_text(face = "bold"))
+ # p2 <- ggplotly(p2)
+
+
+  # CDR-Plot
+  p3 <- ggplot(death_rates(),
+               aes(x = Country, y = cdr,
+                   fill = Country)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    coord_cartesian(ylim = c(0, 13)) +
+    labs(x = "Country", y = "CDR", fill = "Country", subtitle = "x1000 Personen") +
+    theme_minimal() +
+    ggtitle("CDR") +
+   # ggtitle(paste("ASCDR (oben) mit Standard:", input$Rate1, "und CDR (unten)")) -> title needs to contain both plots when using the subplot() function because only title of second plot is displayed
+    labs(caption = "Daten: https://www.mortality.org/Home") +
+    theme(plot.title = element_text(face = "bold"))
+ # p3 <- ggplotly(p3)
+
+  # Only plot CDR when the box is checked:
+  if(input$YN_CDR) grid.arrange(p2, p3)
+  # {subplot(style(p2, showlegend = TRUE), style(p3, showlegend = FALSE), nrows = 2)} 
+    else {p2} 
+    # subplot() instead of grid.arrange for interactive plots
+  
+})
+```
+
+### Plot II
+```{r, fig.height = 8}
+# Plotting the Rates
+renderPlot({
+  # ASCDR-Plot
+  p2 <- ggplot(death_rates(),
+               aes(x = Country, y = ascdr, fill = Country)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    coord_cartesian(ylim = c(0, 13)) +
+    labs(x = "Country", y = "ASCDR", fill = "Country", subtitle = "x1000 Personen") +
+    theme_minimal() +
+    ggtitle(paste("ASCDR mit Standard:", input$Rate1)) +
+    labs(caption = "Daten: https://www.mortality.org/Home") +
+    theme(plot.title = element_text(face = "bold"), legend.position = "none")
+ # p2 <- ggplotly(p2)
+
+ # including CDR rates when box is checked
+  if(input$YN_CDR) {
+    p2 <- p2 + geom_bar(aes(y = cdr), stat = "identity", position = "dodge2", fill = "black", alpha = 0.5)
+  }
+  p2
+ #  # ggplotly(p2)
+
+})
+
+```
+
+### Raten 
+```{r}
+# Printing the Rates (not so pretty)
+renderPrint({
+  print(paste("CDR of", input$Country1, ":", unique(death_rates()$cdr)))
+  print(paste("ASCDR of", input$Country1, "with standard", input$Rate1, ":", unique(death_rates()$ascdr)))
+})
+```
+
+
+
+
+# Daten
+## Column {.tabset}
+
+### Italien 
+```{r}
+DT::renderDataTable({
+  allCountries %>% filter(Country == "Italien") %>% select(-Country) %>% round(4)
+}, options = list(pageLength = 10))
+```
+
+### Spanien
+```{r}
+DT::renderDataTable({
+  allCountries %>% filter(Country == "Spanien") %>% select(-Country) %>% round(4)
+}, options = list(pageLength = 10))
+```
+
+### Ungarn
+```{r}
+DT::renderDataTable({
+  allCountries %>% filter(Country == "Ungarn") %>% select(-Country) %>% round(4)
+}, options = list(pageLength = 10))
+```
+
+### Litauen
+```{r}
+DT::renderDataTable({
+  allCountries %>% filter(Country == "Litauen") %>% select(-Country) %>% round(4)
+}, options = list(pageLength = 10))
+```
+
+### Taiwan
+```{r}
+DT::renderDataTable({
+  allCountries %>% filter(Country == "Taiwan") %>% select(-Country) %>% round(4)
+}, options = list(pageLength = 10))
+```
+
+### Belarus
+```{r}
+DT::renderDataTable({
+  allCountries %>% filter(Country == "Belarus") %>% select(-Country) %>% round(4)
+}, options = list(pageLength = 10))
+```
+
+# Quellen
+```{r}
+h3("Quellen")
+```
+
+Preston, Samuel H., Patrick Heuveline, und Michel Guillot. 2008. Demography: measuring and modeling population processes. 9. Oxford: Blackwell.
+
+HMD. Human Mortality Database. Max Planck Institute for Demographic Research (Germany), University of California, Berkeley (USA), and French Institute for Demographic Studies (France). Available at https://www.mortality.org (data downloaded on March 2024).
+
+```{r}
+h3("Auch interessant:")
+```
+https://ourworldindata.org/age-standardization
+
+
