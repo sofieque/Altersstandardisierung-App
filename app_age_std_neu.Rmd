@@ -29,13 +29,12 @@ RateStandards <- read.csv("RateStandards.csv") # Standards for ASCDR
 ```
 
 # Informationen
-
 ## Column
 <h4> Crude Death Rate (CDR) </h4>
 
 Die Crude Death Rate wird wie folgt berechnet:
 $$CDR = \sum_{i=0}^{\infty}M_i \cdot C_i (\cdot 1000)$$
-wobei $C_x = {N_i}/{N}$ die Proportion der gesamten Population ist, die zu der Alters-Spanne $i$ bis $i+n$ gehört. $M_i = \frac{D_i}{N_i}$ ist die altersspezifische Sterberate für die Alters-Spanne $i$ bis $i+n$ (in den folgenden Beispielen ist n = 4). Die CDR ist Altersverzerrt, d.h. bei einem Land mit "alter" bevölkerungsstruktur kommt es zu einer höheren CDR, als in einem Land mit einer "jungen" Bevölkerungsstruktur, denn in ersterem sterben natürlich mehr Menschen. Um dieser Verzerrung entgegenzuwirken, berechnet man die ASCDR. Dies ist beispielsweise an dem Vergleich von CDR und ASCDR von Taiwan zu erkennen.
+wobei $C_x = {N_i}/{N}$ die Proportion der gesamten Population ist, die zu der Alters-Spanne $i$ bis $i+n$ gehört. $M_i = \frac{D_i}{N_i}$ ist die altersspezifische Todesrate für das Altersintervall $i$ bis $i+n$ (in den folgenden Beispielen ist n = 4). Die CDR ist altersstrukturverzerrt, d.h. bei einem Land mit "alter" Bevölkerungsstruktur und vergleichsweise wenigen Todesfällen kann es zu einer höheren CDR kommen, als in einem Land mit einer "jungen" Bevölkerungsstruktur und vergleichsweise vielen Todesfällen. Grund hierfür ist, dass durch eine ältere Bevölkerungsstruktur die hohen Altersstufen, in denen typischerweise mehr Menschen sterben, stärker gewichtet werden. Um dieser Verzerrung entgegenzuwirken, berechnet man die ASCDR. Dies ist beispielsweise an dem Vergleich von CDR und ASCDR von Taiwan zu erkennen.
 
 <h6> Preston et al. 2008, S.24 
 
@@ -46,7 +45,7 @@ wobei $C_x = {N_i}/{N}$ die Proportion der gesamten Population ist, die zu der A
 
 Die ASCDR wird für ein Land $j$ und Standard $s$ wie folgt berechnet:
 $$ASCDR^j = \sum_{i=0}^{\infty}M_i^j \cdot C_i^s (\cdot 1000)$$
-wobei $C_i^s$ die Proportion der Bevölkerung im $i$-ten Alters-Intervall in einer als "Standard" $s$ ausgewählten Bevölkerung ist. $M_i^j$ ist analog zur CDR für Land $j$: $M_i^j = \frac{D_i^j}{N_i^j}$ die alterspezifische Sterberate für Bevölkerung j. Hier wird also eine Vergeleichsbevölkerung als Standard gewählt und Verzerrungen in der Altersstruktur treten nicht mehr auf. So können Unterschiede in z.B. Sterblichkeit so betrachtet und verglichen werden, als gäbe es keine Unterschiede in der Altersstruktur. Unterschiedliche Wahlen dieses Standards können allerdings zu unterschiedlichen Ergebnissen führen.
+wobei $C_i^s$ die Proportion der Bevölkerung im $i$-ten Alters-Intervall in einer als "Standard" $s$ ausgewählten Bevölkerung ist. $M_i^j$ ist analog zur CDR für Land $j$: $M_i^j = \frac{D_i^j}{N_i^j}$ die alterspezifische Sterberate für Bevölkerung j. Hier wird also eine Vergleichsbevölkerung als Standard gewählt, wodurch Verzerrungen durch die Altersstruktur eliminiert werden. So können Unterschiede in z.B. Sterblichkeit so betrachtet und verglichen werden, als gäbe es keine Unterschiede in der Altersstruktur. Unterschiedliche Wahlen dieses Standards können allerdings zu unterschiedlichen Ergebnissen führen. Auch das ist in den Plots auf den folgenden Seiten dargestellt.
 
 <h6> Preston et al. 2008, S.24 </h6>
 
@@ -59,7 +58,7 @@ above60_EU <- round(sum(RateStandards[RateStandards$Standard == "EU" & RateStand
 
 ## Column {data-width=100}
 Diese Beispiele sollen die Unterschiede aufzeigen, die in einer Altersverteilung vorliegen können und Auswirkungen auf die ASCDR haben. <br>
-Wie hier zu erkennen ist, ist die Altersstruktur von bspw. Taiwan sehr "jung" (nur `r above60_TW`% sind älter als 60 Jahre), während die der EU im Vergleich "alt" ist (hier sind `r above60_EU`% älter als 60 Jahre).
+Wie hier zu erkennen ist, ist die Altersstruktur von bspw. Taiwan sehr "jung" (nur `r above60_TW`% sind älter als 60 Jahre), während die der EU im Vergleich eine "alte" Altersstruktur aufweist (hier sind `r above60_EU`% älter als 60 Jahre).
 
 
 
@@ -115,8 +114,8 @@ checkboxInput(inputId = "YN_CDR",
 
 ## Column {data-width=200}
 
-Hier ist die berechnete ASCDR der Länder zu sehen, die im oberen Auswahlfeld ausgewählt wurde. Mit der Backspace Taste können die Auswahlen entfernt werden. Der Standard kann unten ausgewählt werden. <br><br> 
-Wenn die CDR angezeigt werden soll, klicke dazu die Boc "CDR?". In dem einen Plot-Fenster erscheint dann ein zweiter Plot. In dem anderen werden die Plots übereinander gelegt und die siehst die CDR in schwarz. Die eine Variante dient der Übersichtlichkeit, die andere der Vergleichbarkeit. Der Inhalt ist in beiden Varianten genau der gleiche.
+Hier ist die berechnete ASCDR der Länder zu sehen, die im oberen Auswahlfeld ausgewählt wurde. Der Standard kann unten ausgewählt werden. <br><br> 
+Wenn die CDR angezeigt werden soll, klicke dazu die Box "CDR?". In dem einen Plot-Fenster erscheint dann ein zweiter Plot. In dem anderen werden die Plots übereinander gelegt und die CDR ist in schwarz zu sehen. Die eine Variante dient der Übersichtlichkeit, die andere der Vergleichbarkeit. Der Inhalt ist in beiden Varianten genau der Gleiche.
 
 
 ## Column {data-width=50}
@@ -157,7 +156,7 @@ renderPlot({ # use renderPlotly for interactive plots (ggplotply) instead of ren
                aes(x = Country, y = ascdr, fill = Country)) +
     geom_bar(stat = "identity", position = "dodge") +
     coord_cartesian(ylim = c(0, 13)) +
-    labs(x = "Country", y = "ASCDR", fill = "Country", subtitle = "x1000 Personen") +
+    labs(x = "Country", y = "Tode pro 1000 Personen", fill = "Country", subtitle = "x1000 Personen") +
     theme_minimal() +
     ggtitle(paste("ASCDR mit Standard:", input$Rate1)) +
     labs(caption = "Daten: https://www.mortality.org/Home") +
@@ -171,7 +170,7 @@ renderPlot({ # use renderPlotly for interactive plots (ggplotply) instead of ren
                    fill = Country)) +
     geom_bar(stat = "identity", position = "dodge") +
     coord_cartesian(ylim = c(0, 13)) +
-    labs(x = "Country", y = "CDR", fill = "Country", subtitle = "x1000 Personen") +
+    labs(x = "Country", y = "Tode pro 1000 Personen", fill = "Country", subtitle = "x1000 Personen") +
     theme_minimal() +
     ggtitle("CDR") +
    # ggtitle(paste("ASCDR (oben) mit Standard:", input$Rate1, "und CDR (unten)")) -> title needs to contain both plots when using the subplot() function because only title of second plot is displayed
@@ -197,7 +196,7 @@ renderPlot({
                aes(x = Country, y = ascdr, fill = Country)) +
     geom_bar(stat = "identity", position = "dodge") +
     coord_cartesian(ylim = c(0, 13)) +
-    labs(x = "Country", y = "ASCDR", fill = "Country", subtitle = "x1000 Personen") +
+    labs(x = "Country", y = "Tode pro 1000 Personen", fill = "Country", subtitle = "x1000 Personen") +
     theme_minimal() +
     ggtitle(paste("ASCDR mit Standard:", input$Rate1)) +
     labs(caption = "Daten: https://www.mortality.org/Home") +
