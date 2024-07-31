@@ -56,30 +56,62 @@ above60_TW <- round(sum(allCountries[allCountries$Country == "Taiwan" & allCount
 above60_EU <- round(sum(RateStandards[RateStandards$Standard == "EU" & RateStandards$Age > 60,]$PopProp)*100, 2)
 ```
 
-## Column {data-width=100}
+## Column {.tabset}
+```{r}
+radioButtons(
+  inputId = "Land0",
+  label = "Wähle eine Altersstruktur:",
+  choices = c("Italien", "Ungarn", "Spanien", "Litauen", "Belarus", "Taiwan")
+)
+radioButtons(
+  inputId = "Standard0",
+  label = "Wähle eine Standard-Altersstruktur:",
+  choices = c("WHO", "EU")
+)
+```
+
+
 Diese Beispiele sollen die Unterschiede aufzeigen, die in einer Altersverteilung vorliegen können und Auswirkungen auf die ASCDR haben. <br>
-Wie hier zu erkennen ist, ist die Altersstruktur von bspw. Taiwan sehr "jung" (nur `r above60_TW`% sind älter als 60 Jahre), während die der EU im Vergleich eine "alte" Altersstruktur aufweist (hier sind `r above60_EU`% älter als 60 Jahre).
+Wie hier zu erkennen ist, ist die Altersstruktur von bspw. Taiwan sehr "jung" (nur `r above60_TW`% sind älter als 60 Jahre), während die EU im Vergleich eine "alte" Altersstruktur aufweist (hier sind `r above60_EU`% älter als 60 Jahre).
 
 
+```{r reactive data für altersstruktur}
+
+# Creating a reactive Data set based on Input values
+altersstruktur <- reactive({
+  Land0 <- allCountries %>% 
+    filter(Country %in% input$Land0)
+  
+  return(Land0)
+})
+
+standardstruktur <- reactive({
+  Standard0 <- RateStandards %>%
+    filter(Standard %in% input$Standard0)
+  
+  return(Standard0)
+})
+```
 
 ```{r}
 # plots to show different age distributions, adjust to show the ones needed
 renderPlot({
-  p_demo_TW <- RateStandards %>% filter(Standard == "TW") %>% ggplot(aes(x = Age, y = PopProp)) +
+  p_Struktur_Land <- ggplot(altersstruktur(), aes(x = Age, y = PopProp)) +
     geom_bar(stat = "identity", fill = "skyblue") +
-    labs(x = "Altersgruppen", y = "Population (proportional)", title = "Altersverteilung in Taiwan") +
+    labs(x = "Altersgruppen", y = "Population (proportional)", title = paste("Altersstruktur in", input$Land0)) +
     scale_x_continuous(breaks = RateStandards$Age, labels = paste(RateStandards$Age, "-", RateStandards$Age + 4)) +
     scale_y_continuous(labels = scales::number_format()) +
     theme_minimal()
 
-  p_demo_EU <- RateStandards %>% filter(Standard == "EU") %>% ggplot(aes(x = Age, y = PopProp)) +
+  p_Struktur_Std <- ggplot(standardstruktur(), aes(x = Age, y = PopProp)) +
     geom_bar(stat = "identity", fill = "darkgreen") +
-    labs(x = "Altersgruppen", y = "Population (proportional)", title = "Altersverteilung in der EU") +
+    labs(x = "Altersgruppen", y = "Population (proportional)", 
+         title = paste("Altersstruktur der", input$Standard0)) +
     scale_x_continuous(breaks = RateStandards$Age, labels = paste(RateStandards$Age, "-", RateStandards$Age + 4)) +
     scale_y_continuous(labels = scales::number_format()) +
     theme_minimal()
 
- grid.arrange(p_demo_TW, p_demo_EU, ncol = 2, widths = c(100,100))
+ grid.arrange(p_Struktur_Land, p_Struktur_Std, ncol = 2, widths = c(100,100))
 })
 ```
 
@@ -87,7 +119,6 @@ renderPlot({
 
 
 # Plots für CDR & ASCDR
-<!-- needs Code to Calculate the rates based on the input (Rate & Country) -->
 
 ## Column {.sidebar}
 ```{r}
