@@ -101,7 +101,10 @@ renderPlot({
     labs(x = "Altersgruppen", y = "Population (proportional)", title = paste("Altersstruktur in", input$Land0)) +
     scale_x_continuous(breaks = RateStandards$Age, labels = paste(RateStandards$Age, "-", RateStandards$Age + 4)) +
     scale_y_continuous(labels = scales::number_format()) +
-    theme_minimal()
+    theme_minimal() + 
+    theme(
+      axis.text.x = element_text(angle = 90)
+    )
 
   p_Struktur_Std <- ggplot(standardstruktur(), aes(x = Age, y = PopProp)) +
     geom_bar(stat = "identity", fill = "darkgreen") +
@@ -109,7 +112,10 @@ renderPlot({
          title = paste("Altersstruktur der", input$Standard0)) +
     scale_x_continuous(breaks = RateStandards$Age, labels = paste(RateStandards$Age, "-", RateStandards$Age + 4)) +
     scale_y_continuous(labels = scales::number_format()) +
-    theme_minimal()
+    theme_minimal() + 
+    theme(
+      axis.text.x = element_text(angle = 90)
+    )
 
  grid.arrange(p_Struktur_Land, p_Struktur_Std, ncol = 2, widths = c(100,100))
 })
